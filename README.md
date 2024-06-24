@@ -1,0 +1,1 @@
+This is challenge #1 from Coding Challenges by John Crickett. I will be using it to learn C.

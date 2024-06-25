@@ -19,12 +19,12 @@ int main(int argc, char* argv[]){
 
     if (strcmp(argv[1], "-c") == 0){
         long int result = findSize(argv[2]);
-        printf("Size of file: %ld\n", result);
+        printf("%ld %s", result, argv[2]);
     }
 
     if (strcmp(argv[1], "-l") == 0){
         long int result = getNumLines(argv[2]);
-        printf("Number of lines: %ld\n", result);
+        printf("%ld %s", result, argv[2]);
     }
 
     return 0;

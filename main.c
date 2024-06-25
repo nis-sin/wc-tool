@@ -2,6 +2,7 @@
 #include <string.h>
 
 long int findSize(char* fileName);
+long int getNumLines(char* fileName);
 int validFile(char* fileName);
 int validCommand(int argc);
 
@@ -21,7 +22,39 @@ int main(int argc, char* argv[]){
         printf("Size of file: %ld\n", result);
     }
 
+    if (strcmp(argv[1], "-l") == 0){
+        long int result = getNumLines(argv[2]);
+        printf("Number of lines: %ld\n", result);
+    }
+
     return 0;
+}
+
+long int getNumLines(char* fileName){
+    FILE* file = fopen(fileName, "r");
+
+    if (file == NULL){
+        printf("File not found\n");
+        return -1;
+    }
+
+    long int size = findSize(fileName);
+    long int count = 0;
+    char fileData[size+1];
+
+    while (fgets(fileData, size+1, file) != NULL){      // use getline from glibc instead of fgets but I can't get it working
+        count++;
+    }
+
+    if (ferror(file)){
+        printf("Error reading file\n");
+        fclose(file);
+        return -1;
+    }
+
+    fclose(file);
+
+    return count;
 }
 
 int validCommand(int argc){
@@ -42,7 +75,7 @@ int validFile(char* fileName){
     extension[2] = (char) fileName[fileNameLen - 2];
     extension[3] = (char) fileName[fileNameLen - 1];
 
-    if (strcmp(extension,".txt")){
+    if (strcmp(extension,".txt") == 0){
         return 0;
     }
     else {

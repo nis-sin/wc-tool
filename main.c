@@ -35,9 +35,14 @@ int validCommand(int argc){
 
 int validFile(char* fileName){
     int fileNameLen = strlen(fileName);
-    int extension = fileName[fileNameLen - 4] + fileName[fileNameLen - 3] + fileName[fileNameLen - 2] + fileName[fileNameLen - 1];  // extension = 398 because .txt = 398 in ASCII
+    // retrieve the extension of the file
+    char extension[4];
+    extension[0] = (char) fileName[fileNameLen - 4];
+    extension[1] = (char) fileName[fileNameLen - 3];
+    extension[2] = (char) fileName[fileNameLen - 2];
+    extension[3] = (char) fileName[fileNameLen - 1];
 
-    if (extension == 398){
+    if (strcmp(extension,".txt")){
         return 0;
     }
     else {
@@ -57,7 +62,6 @@ long int findSize(char* fileName){
     fseek(file, 0, SEEK_END);
 
     long int size = ftell(file);
-    printf("%ld\n", size);
 
     fclose(file);
 

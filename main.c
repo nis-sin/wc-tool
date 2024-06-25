@@ -36,7 +36,7 @@ int validCommand(int argc){
 int validFile(char* fileName){
     int fileNameLen = strlen(fileName);
     // retrieve the extension of the file
-    char extension[4];
+    char extension[5];
     extension[0] = (char) fileName[fileNameLen - 4];
     extension[1] = (char) fileName[fileNameLen - 3];
     extension[2] = (char) fileName[fileNameLen - 2];

@@ -3,6 +3,7 @@
 
 long int findSize(char* fileName);
 long int getNumLines(char* fileName);
+long int getNumWords(char* fileName);
 int validFile(char* fileName);
 int validCommand(int argc);
 
@@ -27,8 +28,51 @@ int main(int argc, char* argv[]){
         printf("%ld %s", result, argv[2]);
     }
 
+    if (strcmp(argv[1], "-w") == 0){
+        long int result = getNumWords(argv[2]);
+        printf("%ld %s", result, argv[2]);
+    }
+
     return 0;
 }
+
+
+long int getNumWords(char* fileName){
+    FILE* file = fopen(fileName, "r");
+
+    if (file == NULL){
+        printf("File not found\n");
+        return -1;
+    }
+
+    int inWord = 0;
+    int c;
+    long unsigned int count = 0;
+
+    while ((c = fgetc(file)) != EOF){
+        if ((c >= 65 && c <= 90) || (c >= 97 && c <= 122)){
+            if (inWord == 0){
+                inWord = 1;
+                count++;
+            }
+        }
+        else {
+            inWord = 0;
+        }
+    }
+
+    if (ferror(file)){
+        printf("Error reading file\n");
+        fclose(file);
+        return -1;
+    }
+
+    fclose(file);
+
+    return count;
+
+}
+
 
 long int getNumLines(char* fileName){
     FILE* file = fopen(fileName, "r");

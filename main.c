@@ -1,21 +1,20 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 
 long int findSize(char* fileName);
 long int getNumLines(char* fileName);
 long int getNumWords(char* fileName);
 long int getNumChars(char* fileName);
-int validFile(char* fileName);
-int validCommand(int argc);
+bool validFile(char* fileName);
+bool validCommand(int argc, char* argv[]);
 
 int main(int argc, char* argv[]){
-    if (validCommand(argc) == 1){
-        printf("Invalid command\n");
+    if (validCommand(argc, argv) == false){
+        printf("test\n");
         return 1;
     }
-
-    if (validFile(argv[2]) == 1){
-        printf("Invalid file\n");
+    if (validFile(argv[argc-1]) == false){
         return 1;
     }
 
@@ -130,32 +129,6 @@ long int getNumLines(char* fileName){
     return count;
 }
 
-int validCommand(int argc){
-    if (argc < 2){
-        return 1;
-    }
-    else {
-        return 0;
-    }
-}
-
-int validFile(char* fileName){
-    int fileNameLen = strlen(fileName);
-    // retrieve the extension of the file
-    char extension[5];
-    extension[0] = (char) fileName[fileNameLen - 4];
-    extension[1] = (char) fileName[fileNameLen - 3];
-    extension[2] = (char) fileName[fileNameLen - 2];
-    extension[3] = (char) fileName[fileNameLen - 1];
-
-    if (strcmp(extension,".txt") == 0){
-        return 0;
-    }
-    else {
-        return 1;
-    }
-
-}
 
 long int findSize(char* fileName){
 
@@ -172,4 +145,57 @@ long int findSize(char* fileName){
     fclose(file);
 
     return size;
+}
+
+
+bool validCommand(int argc, char* argv[]){
+    // check if the number of arguments is valid
+    if (!(argc >= 1 && argc <= 4)){
+        printf("Invalid command\n");
+        return false;
+    }
+
+    char* seen[] = {};
+    
+    // check if the options are valid and not repeated
+    for (int i = 1; i < (argc-1); i++){
+        int seenLen = sizeof(seen)/sizeof(seen[0]);
+        for (int j = seenLen-1; j > -1; j--){
+            if ((strcmp(argv[i], seen[j]) == 0) && (
+                (strcmp(argv[i], "-c") != 0) ||
+                (strcmp(argv[i], "-l") != 0) ||
+                (strcmp(argv[i], "-w") != 0) ||
+                (strcmp(argv[i], "-m") != 0))){
+                    printf("Invalid command\n");
+                    return false;
+            }
+            seen[j] = argv[i];
+        }
+    }
+
+    return true;
+}
+
+bool validFile(char* fileName){
+    int fileNameLen = strlen(fileName);
+    
+    // check if a file was provided
+    if (fileNameLen < 5){
+        printf("Invalid file\n");
+        return false;
+    }
+    // retrieve the extension of the file
+    char extension[5];
+    extension[0] = (char) fileName[fileNameLen - 4];
+    extension[1] = (char) fileName[fileNameLen - 3];
+    extension[2] = (char) fileName[fileNameLen - 2];
+    extension[3] = (char) fileName[fileNameLen - 1];
+
+    // check if the file is a .txt file
+    if (strncmp(extension, ".txt", 4) != 0){
+        printf("Invalid file\n");
+        return false;
+    }
+
+    return true;
 }

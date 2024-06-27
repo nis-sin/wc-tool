@@ -2,82 +2,89 @@
 #include <stdbool.h>
 #include <string.h>
 
-long int findSize(char* fileName);
-long int getNumLines(char* fileName);
-long int getNumWords(char* fileName);
-long int getNumChars(char* fileName);
-bool validFile(char* fileName);
-bool validCommand(int argc, char* argv[]);
+long int findSize(FILE* fp);
+long int getNumLines(FILE* fp);
+long int getNumWords(FILE* fp);
+long int getNumChars(FILE* fp);
+bool checkFile(char* fileName);
+bool checkOption(int argc, char* argv[]);
 
 int main(int argc, char* argv[]){
-    if (validCommand(argc, argv) == false){
-        printf("test\n");
+
+    if (argc > 3 || argc < 2){
+        printf("Invalid command\n");
         return 1;
     }
-    if (validFile(argv[argc-1]) == false){
+
+    bool fileProvided = false;
+    FILE* fp;
+    if (checkFile(argv[argc-1]) == true){
+        printf("File provided\n");
+        fp = fopen(argv[argc-1], "r");
+        fileProvided = true;
+    }
+    else {
+        fp = stdin;
+    }
+
+    if (fp == NULL){
+        printf("File not found\n");
+        return -1;
+    }
+
+    if (checkOption(argc, argv) == false){
+        printf("Invalid command\n");
         return 1;
     }
 
     if (strcmp(argv[1], "-c") == 0){
-        long int result = findSize(argv[2]);
+        long int result = findSize(fp);
         printf("%ld %s", result, argv[2]);
     }
 
-    if (strcmp(argv[1], "-l") == 0){
-        long int result = getNumLines(argv[2]);
+    else if (strcmp(argv[1], "-l") == 0){
+        long int result = getNumLines(fp);
         printf("%ld %s", result, argv[2]);
     }
 
-    if (strcmp(argv[1], "-w") == 0){
-        long int result = getNumWords(argv[2]);
+    else if (strcmp(argv[1], "-w") == 0){
+        long int result = getNumWords(fp);
         printf("%ld %s", result, argv[2]);
     }
 
-    if (strcmp(argv[1], "-m") == 0){
-        long int result = getNumChars(argv[2]);
+    else if (strcmp(argv[1], "-m") == 0){
+        long int result = getNumChars(fp);
         printf("%ld %s", result, argv[2]);
     }
 
+    fclose(fp);
     return 0;
 }
 
 
-long int getNumChars(char* fileName){
-    FILE* file = fopen(fileName, "r");
+long int getNumChars(FILE* fp){
 
-    if (file == NULL){
-        printf("File not found\n");
-        return -1;
-    }
-
-    long int size = findSize(fileName);
+    long int size = findSize(fp);
     char fileData[size+1];
 
-    size_t characters = fread(fileData, 1, size, file);
+    fseek(fp, 0, SEEK_SET); // set the file pointer to the beginning of the file
+    size_t characters = fread(fileData, 1, size, fp);
     
-    if (ferror(file)){
+    if (ferror(fp)){
         printf("Error reading file\n");
-        fclose(file);
         return -1;
     }
 
-    fclose(file);
     return characters;
 }
 
-long int getNumWords(char* fileName){
-    FILE* file = fopen(fileName, "r");
-
-    if (file == NULL){
-        printf("File not found\n");
-        return -1;
-    }
+long int getNumWords(FILE* fp){
 
     int inWord = 0;
     int c;
     long unsigned int count = 0;
 
-    while ((c = fgetc(file)) != EOF){
+    while ((c = fgetc(fp)) != EOF){
         if ((c >= 65 && c <= 90) || (c >= 97 && c <= 122)){
             if (inWord == 0){
                 inWord = 1;
@@ -89,99 +96,62 @@ long int getNumWords(char* fileName){
         }
     }
 
-    if (ferror(file)){
+    if (ferror(fp)){
         printf("Error reading file\n");
-        fclose(file);
         return -1;
     }
 
-    fclose(file);
-
     return count;
-
 }
 
 
-long int getNumLines(char* fileName){
-    FILE* file = fopen(fileName, "r");
+long int getNumLines(FILE* fp){
 
-    if (file == NULL){
-        printf("File not found\n");
-        return -1;
-    }
-
-    long int size = findSize(fileName);
+    long int size = findSize(fp);
     long int count = 0;
     char fileData[size+1];
 
-    while (fgets(fileData, size+1, file) != NULL){      // use getline from glibc instead of fgets but I can't get it working
+    fseek(fp, 0, SEEK_SET); // set the file pointer to the beginning of the file
+    while (fgets(fileData, size+1, fp) != NULL){      // use getline from glibc instead of fgets but I can't get it working
         count++;
     }
 
-    if (ferror(file)){
+    if (ferror(fp)){
         printf("Error reading file\n");
-        fclose(file);
         return -1;
     }
-
-    fclose(file);
 
     return count;
 }
 
 
-long int findSize(char* fileName){
+long int findSize(FILE* fp){
 
-    FILE* file = fopen(fileName, "r");
-    if (file == NULL){
-        printf("File not found\n");
-        return -1;
-    }
+    fseek(fp, 0, SEEK_END);
 
-    fseek(file, 0, SEEK_END);
-
-    long int size = ftell(file);
-
-    fclose(file);
+    long int size = ftell(fp);
 
     return size;
 }
 
 
-bool validCommand(int argc, char* argv[]){
-    // check if the number of arguments is valid
-    if (!(argc >= 1 && argc <= 4)){
-        printf("Invalid command\n");
-        return false;
-    }
+bool checkOption(int argc, char* argv[]){
 
-    char* seen[] = {};
-    
-    // check if the options are valid and not repeated
-    for (int i = 1; i < (argc-1); i++){
-        int seenLen = sizeof(seen)/sizeof(seen[0]);
-        for (int j = seenLen-1; j > -1; j--){
-            if ((strcmp(argv[i], seen[j]) == 0) && (
-                (strcmp(argv[i], "-c") != 0) ||
-                (strcmp(argv[i], "-l") != 0) ||
-                (strcmp(argv[i], "-w") != 0) ||
-                (strcmp(argv[i], "-m") != 0))){
-                    printf("Invalid command\n");
-                    return false;
-            }
-            seen[j] = argv[i];
+    char* options[] = {"-c", "-l", "-w", "-m"};
+    for (int i = 0; i < 4; i++){
+        if (strcmp(argv[1], options[i]) == 0){
+            return true;
         }
     }
 
-    return true;
+    return false;
 }
 
-bool validFile(char* fileName){
+bool checkFile(char* fileName){
     int fileNameLen = strlen(fileName);
     
     // check if a file was provided
     if (fileNameLen < 5){
-        printf("Invalid file\n");
         return false;
     }
     // retrieve the extension of the file
@@ -193,7 +163,6 @@ bool validFile(char* fileName){
 
     // check if the file is a .txt file
     if (strncmp(extension, ".txt", 4) != 0){
-        printf("Invalid file\n");
         return false;
     }
 

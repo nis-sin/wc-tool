@@ -92,7 +92,7 @@ long int getNumChars(FILE* fp){
     long int size = findSize(fp);
     char fileData[size+1];
 
-    fseek(fp, 0, SEEK_SET); // set the file pointer to the beginning of the file
+    rewind(fp);
     size_t characters = fread(fileData, 1, size, fp);
     
     if (ferror(fp)){
@@ -109,7 +109,7 @@ long int getNumWords(FILE* fp){
     int c;
     long unsigned int count = 0;
 
-    fseek(fp, 0, SEEK_SET); // set the file pointer to the beginning of the file
+    rewind(fp);
     while ((c = fgetc(fp)) != EOF){
         if ((c >= 65 && c <= 90) || (c >= 97 && c <= 122)){
             if (inWord == 0){
@@ -137,7 +137,7 @@ long int getNumLines(FILE* fp){
     long int count = 0;
     char fileData[size+1];
 
-    fseek(fp, 0, SEEK_SET); // set the file pointer to the beginning of the file
+    rewind(fp);
     while (fgets(fileData, size+1, fp) != NULL){      // use getline from glibc instead of fgets but I can't get it working
         count++;
     }

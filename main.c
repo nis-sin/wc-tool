@@ -6,7 +6,7 @@ long int findSize(FILE* fp);
 long int getNumLines(FILE* fp);
 long int getNumWords(FILE* fp);
 long int getNumChars(FILE* fp);
-void comparison(FILE* fp, char* option, char* fileName);
+void comparison(FILE* fp, char* option, long int result[3]);
 bool checkFile(char* fileName);
 bool checkOption(int argc, char* argv[]);
 
@@ -18,11 +18,10 @@ int main(int argc, char* argv[]){
     }
 
     FILE* fp = stdin;
+    long int result[3] = {-1, -1, -1};
     if (argc == 1){
-        long int resultC = findSize(fp);
-        long int resultL = getNumLines(fp);
-        long int resultW = getNumWords(fp);
-        printf("%ld %ld %ld %s\n", resultC, resultL, resultW, "stdin");
+        comparison(fp, "", result);
+        printf("%ld %ld %ld %s\n", result[0], result[1], result[2], "stdin");
         return 0;
     }
 
@@ -38,52 +37,53 @@ int main(int argc, char* argv[]){
 
     bool optionProvided = checkOption(argc, argv);
 
-    if (argc == 2){
-        if (fileProvided == true){
-            long int resultC = findSize(fp);
-            long int resultL = getNumLines(fp);
-            long int resultW = getNumWords(fp);
-            printf("%ld %ld %ld %s\n", resultC, resultL, resultW, argv[argc-1]);
-        }
-        else if (optionProvided == true){
-            comparison(fp, argv[1], "stdin");
-        }
-        return 0;
+    if (optionProvided == false && fileProvided == false){
+        printf("Invalid command\n");
+        return 1;
     }
 
-    if (argc == 3 && optionProvided == true && fileProvided == true){
-        comparison(fp, argv[1], argv[2]);
-        return 0;
+    if (argc == 2 && fileProvided == true){
+        comparison(fp, "", result);
+        printf("%ld %ld %ld %s\n", result[0], result[1], result[2], argv[argc-1]);
+    }
+
+    if (argc == 2 && optionProvided == true){
+        comparison(fp, argv[1], result);
+        printf("%ld %s\n", result[0], "stdin");
+    }
+
+    if (argc == 3){
+        comparison(fp, argv[1], result);
+        printf("%ld %s\n", result[0], argv[argc-1]);
     }
 
     fclose(fp);
-    printf("Invalid command\n");
-    return 1;
-
-
+    return 0;
 }
 
 
-void comparison(FILE* fp, char* option, char* fileName){
+void comparison(FILE* fp, char* option, long int result[3]){
 
     if (strcmp(option, "-c") == 0){
-        long int result = findSize(fp);
-        printf("%ld %s", result, fileName);
+        result[0] = findSize(fp);
     }
 
     else if (strcmp(option, "-l") == 0){
-        long int result = getNumLines(fp);
-        printf("%ld %s", result, fileName);
+        result[0] = getNumLines(fp);
     }
 
     else if (strcmp(option, "-w") == 0){
-        long int result = getNumWords(fp);
-        printf("%ld %s", result, fileName);
+        result[0] = getNumWords(fp);
     }
 
     else if (strcmp(option, "-m") == 0){
-        long int result = getNumChars(fp);
-        printf("%ld %s", result, fileName);
+        result[0] = getNumChars(fp);
+    }
+
+    else if (strcmp(option, "") == 0){
+        result[0] = findSize(fp);
+        result[1] = getNumLines(fp);
+        result[2] = getNumWords(fp);
     }
 }
 

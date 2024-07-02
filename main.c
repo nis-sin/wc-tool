@@ -1,196 +1,115 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
-#include <string.h>
+#include <wctype.h>
+#include <wchar.h>
+#include <locale.h>
+#include <unistd.h>
 
-long int findSize(FILE* fp);
-long int getNumLines(FILE* fp);
-long int getNumWords(FILE* fp);
-long int getNumChars(FILE* fp);
-void comparison(FILE* fp, char* option, long int result[3]);
-bool checkFile(char* fileName);
-bool checkOption(int argc, char* argv[]);
+void readStream(FILE* fp, int result[4]);
 
 int main(int argc, char* argv[]){
+    // Set locale to the user's default locale
+    setlocale(LC_ALL, "");
 
-    if (argc > 3){
-        printf("Invalid command\n");
-        return 1;
+    int result[4] = {-1, -1, -1, -1};       // size, char, word, sentence counts
+    bool cflag = false, wflag = false, lflag = false, mflag = false, fileflag = false;
+    FILE* fp = stdin;   // default to stdin
+    char* filename;
+    int option;
+
+    // Use getopt to parse the command line arguments. Specify a hyphen prefix so that non-option arguments are treated as arguments
+    // if non-option arguments are present, getopt returns 1
+    while ((option = getopt(argc, argv, "-cwml")) != -1){
+        switch (option){
+            case 'c':
+                cflag = true;
+                break;
+            case 'w':
+                wflag = true;
+                break;
+            case 'm':
+                mflag = true;
+                break;
+            case 'l':
+                lflag = true;
+                break;
+            case 1:
+                fileflag = true;
+                filename = optarg;
+                break;
+            case '?':
+                printf("Invalid option\n");
+                return -1;
+        }
     }
 
-    FILE* fp = stdin;
-    long int result[3] = {-1, -1, -1};
-    if (argc == 1){
-        comparison(fp, "", result);
-        printf("%ld %ld %ld %s\n", result[0], result[1], result[2], "stdin");
-        return 0;
+    // check if file argument if given and open the file
+    if (fileflag == true){
+        fp = fopen(filename, "r");
+        if (fp == NULL){
+            printf("File not found\n");
+            return -1;
+        }
     }
 
-    bool fileProvided = checkFile(argv[argc-1]);
-    if (fileProvided == true){
-        fp = fopen(argv[argc-1], "r");
+    // Default command execution if no options are specified
+    if (cflag == false && wflag == false && lflag == false && mflag == false){
+        cflag = true;
+        wflag = true;
+        lflag = true;
     }
 
-    if (fp == NULL){
-        printf("File not found\n");
-        return -1;
+    readStream(fp, result);
+
+    if (cflag == true){
+        printf("size: %d ", result[0]);
     }
-
-    bool optionProvided = checkOption(argc, argv);
-
-    if (optionProvided == false && fileProvided == false){
-        printf("Invalid command\n");
-        return 1;
+    if (wflag == true){
+        printf("word: %d ", result[2]);
     }
-
-    if (argc == 2 && fileProvided == true){
-        comparison(fp, "", result);
-        printf("%ld %ld %ld %s\n", result[0], result[1], result[2], argv[argc-1]);
+    if (lflag == true){
+        printf("sentence: %d ", result[3]);
     }
-
-    if (argc == 2 && optionProvided == true){
-        comparison(fp, argv[1], result);
-        printf("%ld %s\n", result[0], "stdin");
+    if (mflag == true){
+        printf("char: %d ", result[1]);
     }
+    printf("\n");
 
-    if (argc == 3){
-        comparison(fp, argv[1], result);
-        printf("%ld %s\n", result[0], argv[argc-1]);
-    }
-
-    fclose(fp);
     return 0;
 }
 
 
-void comparison(FILE* fp, char* option, long int result[3]){
+void readStream(FILE* fp, int result[4]){
+    /*
+    we need to read in wide characters since characters can be multibyte, utf-8 etc. Thus write the program
+    to handles wide characters. We will use the wint_t type to store the wide characters.
+    */
+    wint_t wc;
+    char buffer[8];
+    bool inWord = false, space = false, inSentence = false;
+    long int charCount = 0, wordCount = 0, sentenceCount = 0, size = 0;
 
-    if (strcmp(option, "-c") == 0){
-        result[0] = findSize(fp);
-    }
+    while ((wc = fgetwc(fp)) != WEOF){
+        charCount++;
+        size += wctomb(buffer, wc);
 
-    else if (strcmp(option, "-l") == 0){
-        result[0] = getNumLines(fp);
-    }
-
-    else if (strcmp(option, "-w") == 0){
-        result[0] = getNumWords(fp);
-    }
-
-    else if (strcmp(option, "-m") == 0){
-        result[0] = getNumChars(fp);
-    }
-
-    else if (strcmp(option, "") == 0){
-        result[0] = findSize(fp);
-        result[1] = getNumLines(fp);
-        result[2] = getNumWords(fp);
-    }
-}
-
-long int getNumChars(FILE* fp){
-
-    long int size = findSize(fp);
-    char fileData[size+1];
-
-    rewind(fp);
-    size_t characters = fread(fileData, 1, size, fp);
-    
-    if (ferror(fp)){
-        printf("Error reading file\n");
-        return -1;
-    }
-
-    return characters;
-}
-
-long int getNumWords(FILE* fp){
-
-    int inWord = 0;
-    int c;
-    long unsigned int count = 0;
-
-    rewind(fp);
-    while ((c = fgetc(fp)) != EOF){
-        if ((c >= 65 && c <= 90) || (c >= 97 && c <= 122)){
-            if (inWord == 0){
-                inWord = 1;
-                count++;
-            }
+        space = iswspace(wc);
+        if (inWord == true && space == true){
+            inWord = false;
         }
-        else {
-            inWord = 0;
+        else if (inWord == false && space == false){
+            wordCount++;
+            inWord = true;
         }
-    }
 
-    if (ferror(fp)){
-        printf("Error reading file\n");
-        return -1;
-    }
-
-    return count;
-}
-
-
-long int getNumLines(FILE* fp){
-
-    long int size = findSize(fp);
-    long int count = 0;
-    char fileData[size+1];
-
-    rewind(fp);
-    while (fgets(fileData, size+1, fp) != NULL){      // use getline from glibc instead of fgets but I can't get it working
-        count++;
-    }
-
-    if (ferror(fp)){
-        printf("Error reading file\n");
-        return -1;
-    }
-
-    return count;
-}
-
-
-long int findSize(FILE* fp){
-
-    fseek(fp, 0, SEEK_END);
-
-    long int size = ftell(fp);
-
-    return size;
-}
-
-
-bool checkOption(int argc, char* argv[]){
-
-    char* options[] = {"-c", "-l", "-w", "-m"};
-    for (int i = 0; i < 4; i++){
-        if (strcmp(argv[1], options[i]) == 0){
-            return true;
+        if (wc == L'\n'){
+            sentenceCount++;
         }
+
     }
-
-    return false;
-}
-
-bool checkFile(char* fileName){
-    int fileNameLen = strlen(fileName);
-    
-    // check if a file was provided
-    if (fileNameLen < 5){
-        return false;
-    }
-    // retrieve the extension of the file
-    char extension[5];
-    extension[0] = (char) fileName[fileNameLen - 4];
-    extension[1] = (char) fileName[fileNameLen - 3];
-    extension[2] = (char) fileName[fileNameLen - 2];
-    extension[3] = (char) fileName[fileNameLen - 1];
-
-    // check if the file is a .txt file
-    if (strncmp(extension, ".txt", 4) != 0){
-        return false;
-    }
-
-    return true;
+    result[0] = size;
+    result[1] = charCount;
+    result[2] = wordCount;
+    result[3] = sentenceCount;
 }

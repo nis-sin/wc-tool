@@ -1,4 +1,4 @@
-This is challenge #2 from (coding challenges)[https://codingchallenges.fyi/challenges/challenge-wc/] by John Crickett. This is a simple wc tool with fewer functionalities than the wc tool available in Unix based systems.
+This is challenge #2 from [coding challenges](https://codingchallenges.fyi/challenges/challenge-wc/) by John Crickett. This is a simple wc tool with fewer functionalities than the wc tool available in Unix based systems.
 
 ---
 
